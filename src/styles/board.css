@@ -1,0 +1,133 @@
+.board {
+  width: 100%;
+}
+
+.board__columns {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(280px, 360px);
+  gap: 14px;
+  align-items: start;
+  overflow-x: auto;
+  padding-bottom: 6px;
+}
+
+.board__columnWrap {
+  min-height: 1px;
+}
+
+.column {
+  border: 1px solid var(--border);
+  background: var(--panel);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  max-height: calc(100svh - 140px);
+}
+
+.column__header {
+  padding: 12px 12px 10px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.column__title {
+  margin: 0;
+  font-size: 16px;
+  letter-spacing: -0.2px;
+}
+
+.column__meta {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.taskList {
+  padding: 10px 10px 12px;
+  overflow: auto;
+  display: grid;
+  gap: 8px;
+}
+
+.taskList__empty {
+  padding: 12px;
+  color: var(--muted);
+  border: 1px dashed var(--border);
+  border-radius: var(--radiusSm);
+  text-align: center;
+}
+
+.task {
+  display: grid;
+  grid-template-columns: auto auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radiusSm);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.task__select input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+}
+
+.task--completed {
+  opacity: 0.72;
+}
+
+.task--completed .task__title {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+
+.task__title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.task mark {
+  background: rgba(250, 204, 21, 0.22);
+  color: var(--text);
+  padding: 0 2px;
+  border-radius: 4px;
+}
+
+.task__check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: default;
+}
+
+.task__check input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.task__checkUi {
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+  display: inline-block;
+}
+
+.column__footer {
+  padding: 10px 12px 12px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
