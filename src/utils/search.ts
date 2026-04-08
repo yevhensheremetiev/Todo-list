@@ -1,4 +1,17 @@
-type HighlightPart = { type: 'text' | 'match'; text: string }
+export type HighlightPart = { type: 'text' | 'match'; text: string }
+
+/** Substring or subsequence match (bonus “smart search”). */
+export function fuzzyMatch(text: string, query: string): boolean {
+  const q = query.trim().toLowerCase()
+  if (!q) return true
+  const t = text.toLowerCase()
+  if (t.includes(q)) return true
+  let qi = 0
+  for (let ti = 0; ti < t.length && qi < q.length; ti++) {
+    if (t[ti] === q[qi]) qi++
+  }
+  return qi === q.length
+}
 
 export function highlightMatchParts(text: string, query: string): HighlightPart[] {
   const q = query.trim()

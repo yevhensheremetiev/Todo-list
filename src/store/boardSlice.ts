@@ -1,6 +1,9 @@
+/**
+ * Board domain state: columns, tasks, selection, and reducers for CRUD, bulk ops, and reordering.
+ */
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 import type { BoardState, Column, ColumnId, Task, TaskId } from '../types/board'
-import { createInitialBoardState } from '../state/boardReducer'
+import { createInitialBoardState } from '../board/initialBoard'
 
 function id(prefix: string) {
   return `${prefix}_${Math.random().toString(16).slice(2)}_${Date.now().toString(16)}`

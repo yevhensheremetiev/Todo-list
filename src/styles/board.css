@@ -2,18 +2,67 @@
   width: 100%;
 }
 
+.board__toolbar {
+  margin-bottom: 12px;
+}
+
+.bulkBar {
+  position: sticky;
+  top: 72px;
+  z-index: 4;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radiusSm);
+  background: rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(8px);
+}
+
+.bulkBar__count {
+  font-size: 13px;
+  color: var(--muted);
+  margin-right: 4px;
+}
+
+.bulkBar__select {
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  font-size: 13px;
+  min-width: 140px;
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .board__columns {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(280px, 360px);
-  gap: 14px;
-  align-items: start;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 0;
   overflow-x: auto;
   padding-bottom: 6px;
 }
 
 .board__columnWrap {
   min-height: 1px;
+  flex: 0 0 minmax(280px, 360px);
+  max-width: 360px;
 }
 
 .column {
@@ -35,10 +84,65 @@
   justify-content: space-between;
 }
 
+.column__dragHandle {
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--muted);
+  border-radius: 10px;
+  padding: 6px 8px;
+  cursor: grab;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.column__dragHandle:active {
+  cursor: grabbing;
+}
+
 .column__title {
   margin: 0;
   font-size: 16px;
   letter-spacing: -0.2px;
+}
+
+.column__titleBtn {
+  background: none;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+}
+
+.column__titleInput {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  font: inherit;
+}
+
+.column__addRow {
+  display: flex;
+  gap: 8px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  align-items: center;
+}
+
+.column__newTaskInput {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+  font-size: 14px;
 }
 
 .column__meta {
@@ -62,15 +166,85 @@
   text-align: center;
 }
 
+.taskDropGap {
+  min-height: 8px;
+  min-width: 8px;
+  transition: background 0.15s ease;
+}
+
+.taskDropGap[data-dragging-over='true'] {
+  background: rgba(139, 92, 246, 0.25);
+  border-radius: 6px;
+}
+
+.columnDropGap {
+  width: 10px;
+  min-height: 120px;
+  min-width: 10px;
+  flex-shrink: 0;
+  align-self: stretch;
+  border-radius: 8px;
+  transition: background 0.15s ease;
+}
+
 .task {
   display: grid;
-  grid-template-columns: auto auto 1fr auto;
+  grid-template-columns: auto auto auto 1fr auto;
   align-items: center;
   gap: 10px;
   padding: 10px 10px;
   border: 1px solid var(--border);
   border-radius: var(--radiusSm);
   background: rgba(255, 255, 255, 0.04);
+}
+
+.task__dragHandle {
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--muted);
+  border-radius: 8px;
+  padding: 4px 6px;
+  cursor: grab;
+  line-height: 1;
+  font-size: 12px;
+}
+
+.task__dragHandle:active {
+  cursor: grabbing;
+}
+
+.task--dimmed {
+  opacity: 0.45;
+}
+
+.task--selected {
+  outline: 1px solid rgba(139, 92, 246, 0.9);
+  outline-offset: 0;
+}
+
+.task__titleBtn {
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  padding: 0;
+}
+
+.task__editInput {
+  width: 100%;
+  min-width: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  font: inherit;
 }
 
 .task__select input {
@@ -104,23 +278,13 @@
 .task__check {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  cursor: default;
 }
 
-.task__check input {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.task__checkUi {
+.task__completeBox {
   width: 18px;
   height: 18px;
-  border-radius: 6px;
-  border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.04);
-  display: inline-block;
+  accent-color: var(--accent);
+  cursor: pointer;
 }
 
 .column__footer {
