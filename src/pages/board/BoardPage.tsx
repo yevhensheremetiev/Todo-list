@@ -1,8 +1,9 @@
-import { useMemo, useReducer } from 'react'
 import { Column } from './Column.tsx'
-import { boardReducer, createInitialBoardState } from '../../state/boardReducer.ts'
 import type { StatusFilter } from '../../types/board.ts'
 import '../../styles/board.css'
+import { useAppDispatch, useAppSelector } from '../../store/hooks'
+import { boardActions } from '../../store/boardSlice'
+import type { RootState } from '../../store/store'
 
 type Props = {
   searchQuery: string
@@ -10,8 +11,8 @@ type Props = {
 }
 
 export function BoardPage({ searchQuery, statusFilter }: Props) {
-  const initial = useMemo(() => createInitialBoardState(), [])
-  const [state, dispatch] = useReducer(boardReducer, initial)
+  const state = useAppSelector((s: RootState) => s.board)
+  const dispatch = useAppDispatch()
 
   return (
     <section className="board" aria-label="Todo board">
@@ -24,9 +25,9 @@ export function BoardPage({ searchQuery, statusFilter }: Props) {
               searchQuery={searchQuery}
               statusFilter={statusFilter}
               selection={state.selection.taskIds}
-              onToggleSelect={(taskId) => dispatch({ type: 'selection/toggle', taskId })}
-              onSelectAll={() => dispatch({ type: 'selection/selectAllInColumn', columnId })}
-              onDeselectAll={() => dispatch({ type: 'selection/deselectAllInColumn', columnId })}
+              onToggleSelect={(taskId) => dispatch(boardActions.selectionToggle({ taskId }))}
+              onSelectAll={() => dispatch(boardActions.selectionSelectAllInColumn({ columnId }))}
+              onDeselectAll={() => dispatch(boardActions.selectionDeselectAllInColumn({ columnId }))}
             />
           </div>
         ))}
