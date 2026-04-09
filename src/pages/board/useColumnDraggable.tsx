@@ -18,6 +18,7 @@ export function useColumnDraggable(params: {
   title: string;
   fullTasks: readonly Task[];
   visibleTaskIds: readonly string[];
+  selectedTaskIds: readonly string[];
   shownCount: number;
 }) {
   const {
@@ -27,6 +28,7 @@ export function useColumnDraggable(params: {
     title,
     fullTasks,
     visibleTaskIds,
+    selectedTaskIds,
     shownCount,
   } = params;
 
@@ -38,6 +40,11 @@ export function useColumnDraggable(params: {
   const visibleTaskIdSet = useMemo(
     () => new Set(visibleTaskIds),
     [visibleTaskIds],
+  );
+
+  const selectedTaskIdSet = useMemo(
+    () => new Set(selectedTaskIds),
+    [selectedTaskIds],
   );
 
   useEffect(() => {
@@ -82,6 +89,7 @@ export function useColumnDraggable(params: {
             height={dragPreview.height}
             fullTasks={fullTasks}
             visibleTaskIdSet={visibleTaskIdSet}
+            selectedTaskIdSet={selectedTaskIdSet}
             shownCount={shownCount}
           />,
           dragPreview.container,

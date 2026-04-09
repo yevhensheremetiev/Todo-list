@@ -8,6 +8,7 @@ type Props = {
   height: number;
   fullTasks: readonly Task[];
   visibleTaskIdSet: ReadonlySet<string>;
+  selectedTaskIdSet: ReadonlySet<string>;
   shownCount: number;
 };
 
@@ -17,6 +18,7 @@ function ColumnDragPreviewComponent({
   height,
   fullTasks,
   visibleTaskIdSet,
+  selectedTaskIdSet,
   shownCount,
 }: Props) {
   return (
@@ -66,6 +68,7 @@ function ColumnDragPreviewComponent({
                 "task",
                 "task--dragPreview",
                 t.completed ? "task--completed" : "",
+                selectedTaskIdSet.has(t.id) ? "task--selected" : "",
                 visibleTaskIdSet.has(t.id) ? "" : "task--dimmed",
               )}
             >
@@ -73,13 +76,9 @@ function ColumnDragPreviewComponent({
                 ⋮⋮
               </span>
               <span className="task__select" aria-hidden="true">
-                <input type="checkbox" checked={false} readOnly tabIndex={-1} />
-              </span>
-              <span className="task__check" aria-hidden="true">
                 <input
-                  className="task__completeBox"
                   type="checkbox"
-                  checked={t.completed}
+                  checked={selectedTaskIdSet.has(t.id)}
                   readOnly
                   tabIndex={-1}
                 />

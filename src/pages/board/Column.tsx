@@ -85,6 +85,7 @@ export function Column({
     title: column.title,
     fullTasks,
     visibleTaskIds: visibleTasks.map((t) => t.id),
+    selectedTaskIds: selection,
     shownCount: visibleTasks.length,
   });
 
