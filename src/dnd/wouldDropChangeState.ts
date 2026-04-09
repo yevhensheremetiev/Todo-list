@@ -45,11 +45,18 @@ function simulateTaskDrop(
   insertAt: number,
 ): BoardState {
   const b = cloneBoard(board)
-  const selected = b.selection.taskIds.filter((id) => b.tasksById[id])
-  const selectedSet = new Set(selected)
-  const moveGroup = selected.length > 1 && selectedSet.has(d.taskId)
+  const selectedSet = new Set(b.selection.taskIds.filter((id) => b.tasksById[id]))
+  const moveGroup = selectedSet.size > 1 && selectedSet.has(d.taskId)
 
   if (moveGroup) {
+    const selected: string[] = []
+    for (const colId of b.columnOrder) {
+      const col = b.columnsById[colId]
+      for (const id of col.taskIds) {
+        if (selectedSet.has(id)) selected.push(id)
+      }
+    }
+
     for (const colId of b.columnOrder) {
       b.columnsById[colId].taskIds = b.columnsById[colId].taskIds.filter((id) => !selectedSet.has(id))
     }

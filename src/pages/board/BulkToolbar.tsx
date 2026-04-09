@@ -1,7 +1,7 @@
 import { useRef } from 'react'
-import { useAppDispatch, useAppSelector } from '../../store/hooks'
-import { boardActions } from '../../store/boardSlice'
-import type { RootState } from '../../store/store'
+import { useAppDispatch, useAppSelector } from '../../state/store/hooks'
+import { boardActions } from '../../state/store/boardSlice'
+import type { RootState } from '../../state/store/store'
 
 export function BulkToolbar() {
   const dispatch = useAppDispatch()

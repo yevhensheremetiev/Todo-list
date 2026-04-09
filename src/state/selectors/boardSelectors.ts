@@ -1,7 +1,7 @@
 import { createSelector } from '@reduxjs/toolkit'
-import type { RootState } from '../store/store'
-import type { ColumnId, StatusFilter, Task } from '../types/board'
-import { taskMatchesSearch, taskMatchesStatus } from '../utils/filterTasks.ts'
+import type { RootState } from '../store/store.ts'
+import type { ColumnId, StatusFilter, Task } from '../../types/board.ts'
+import { taskMatchesSearch, taskMatchesStatus } from '../../utils/filterTasks.ts'
 
 export const selectBoard = (s: RootState) => s.board
 

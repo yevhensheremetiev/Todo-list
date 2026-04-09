@@ -1,6 +1,6 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
-import type { BoardState, Column, ColumnId, Task, TaskId } from '../types/board'
-import { createInitialBoardState } from '../board/initialBoard'
+import type { BoardState, Column, ColumnId, Task, TaskId } from '../../types/board'
+import { createInitialBoardState } from '../../board/initialBoard'
 
 function id(prefix: string) {
   return `${prefix}_${Math.random().toString(16).slice(2)}_${Date.now().toString(16)}`
@@ -174,10 +174,19 @@ export const boardSlice = createSlice({
     bulkMoveSelected(state, action: PayloadAction<{ toColumnId: ColumnId; toIndex?: number }>) {
       const to = state.columnsById[action.payload.toColumnId]
       if (!to) return
-      const selected = state.selection.taskIds.filter((id) => !!state.tasksById[id])
+      const selectedSet = new Set(state.selection.taskIds.filter((id) => !!state.tasksById[id]))
+      if (selectedSet.size === 0) return
+
+      const selected: TaskId[] = []
+      for (const colId of state.columnOrder) {
+        const col = state.columnsById[colId]
+        if (!col) continue
+        for (const id of col.taskIds) {
+          if (selectedSet.has(id)) selected.push(id)
+        }
+      }
       if (selected.length === 0) return
 
-      const selectedSet = new Set(selected)
       for (const colId of state.columnOrder) {
         const col = state.columnsById[colId]
         col.taskIds = col.taskIds.filter((id) => !selectedSet.has(id))

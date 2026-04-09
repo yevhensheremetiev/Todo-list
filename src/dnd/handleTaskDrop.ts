@@ -1,5 +1,5 @@
-import type { AppDispatch } from '../store/store'
-import { boardActions } from '../store/boardSlice'
+import type { AppDispatch } from '../state/store/store'
+import { boardActions } from '../state/store/boardSlice'
 import type { BoardState } from '../types/board'
 import type { BoardTaskDragData } from '../types/dnd'
 import { DND_TASK } from '../types/dnd'

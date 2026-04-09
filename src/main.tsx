@@ -5,7 +5,7 @@ import { PersistGate } from 'redux-persist/integration/react'
 import { preventUnhandled } from '@atlaskit/pragmatic-drag-and-drop/prevent-unhandled'
 import './index.css'
 import { App } from './App'
-import { persistor, store } from './store/store'
+import { persistor, store } from './state/store/store'
 
 preventUnhandled.start()
 

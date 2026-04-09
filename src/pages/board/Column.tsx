@@ -1,12 +1,15 @@
 import { draggable } from '@atlaskit/pragmatic-drag-and-drop/element/adapter'
-import { Fragment, useEffect, useId, useRef, useState } from 'react'
+import { Fragment, useEffect, useId, useMemo, useRef, useState } from 'react'
 import type { ColumnId, StatusFilter, Task } from '../../types/board.ts'
 import { TaskItem } from './TaskItem.tsx'
 import { TaskDropGap } from '../../dnd/TaskDropGap.tsx'
-import { useAppDispatch } from '../../store/hooks'
-import { boardActions } from '../../store/boardSlice'
-import { filterTasksForDisplay } from '../../selectors/boardSelectors.ts'
+import { useAppDispatch } from '../../state/store/hooks.ts'
+import { boardActions } from '../../state/store/boardSlice.ts'
+import { filterTasksForDisplay } from '../../state/selectors/boardSelectors.ts'
 import { DND_COLUMN } from '../../types/dnd.ts'
+import { pointerOutsideOfPreview } from '@atlaskit/pragmatic-drag-and-drop/element/pointer-outside-of-preview'
+import { setCustomNativeDragPreview } from '@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview'
+import { createPortal } from 'react-dom'
 
 type Props = {
   column: { id: ColumnId; title: string; taskIds: string[] }
@@ -19,6 +22,10 @@ type Props = {
   onSelectAll: () => void
   onDeselectAll: () => void
 }
+
+type DragPreviewState =
+  | { type: 'idle' }
+  | { type: 'preview'; container: HTMLElement; width: number; height: number }
 
 export function Column({
   column,
@@ -34,13 +41,15 @@ export function Column({
   const dispatch = useAppDispatch()
   const headingId = useId()
   const handleRef = useRef<HTMLButtonElement>(null)
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragPreview, setDragPreview] = useState<DragPreviewState>({ type: 'idle' })
   const [newTitle, setNewTitle] = useState('')
   const [renaming, setRenaming] = useState(false)
   const [draftTitle, setDraftTitle] = useState('')
 
   const fullTasks = column.taskIds.map((id) => tasksById[id]).filter(Boolean)
   const visibleTasks = filterTasksForDisplay(fullTasks, searchQuery, statusFilter)
-  const visibleSet = new Set(visibleTasks.map((t) => t.id))
+  const visibleSet = useMemo(() => new Set(visibleTasks.map((t) => t.id)), [visibleTasks])
 
   useEffect(() => {
     const handle = handleRef.current
@@ -52,6 +61,25 @@ export function Column({
         columnId: column.id,
         index: columnIndex,
       }),
+      onDragStart: () => setIsDragging(true),
+      onDrop: () => {
+        setIsDragging(false)
+        setDragPreview({ type: 'idle' })
+      },
+      onGenerateDragPreview: ({ nativeSetDragImage }) => {
+        setCustomNativeDragPreview({
+          nativeSetDragImage,
+          getOffset: pointerOutsideOfPreview({ x: '8px', y: '8px' }),
+          render: ({ container }) => {
+            const columnEl = handle.closest('.column') as HTMLElement | null
+            const rect = columnEl?.getBoundingClientRect()
+            const width = Math.max(280, Math.round(rect?.width ?? 320))
+            const height = Math.max(160, Math.round(rect?.height ?? 420))
+            setDragPreview({ type: 'preview', container, width, height })
+            return () => setDragPreview({ type: 'idle' })
+          },
+        })
+      },
     })
   }, [column.id, columnIndex])
 
@@ -71,7 +99,8 @@ export function Column({
   }
 
   return (
-    <div className="column" aria-labelledby={headingId}>
+    <>
+      <div className={['column', isDragging ? 'column--dragging' : ''].filter(Boolean).join(' ')} aria-labelledby={headingId}>
       <header className="column__header">
         <button
           ref={handleRef}
@@ -190,6 +219,78 @@ export function Column({
           Delete column
         </button>
       </footer>
-    </div>
+      </div>
+
+      {dragPreview.type === 'preview'
+        ? createPortal(
+            <div className="column column--dragPreview" style={{ width: dragPreview.width, height: dragPreview.height }}>
+              <header className="column__header">
+                <span className="column__dragHandle" aria-hidden="true">
+                  ⋮⋮
+                </span>
+                <div className="column__headerText">
+                  <div className="column__title" aria-hidden="true">
+                    {column.title}
+                  </div>
+                  <div className="column__meta" aria-hidden="true">
+                    {visibleTasks.length} shown · {fullTasks.length} total
+                  </div>
+                </div>
+                <span className="btn btn--subtle" aria-hidden="true">
+                  Rename
+                </span>
+              </header>
+
+              <div className="column__addRow" aria-hidden="true">
+                <input className="column__newTaskInput" value="" placeholder="New task…" readOnly tabIndex={-1} />
+                <button className="btn btn--subtle" type="button" disabled tabIndex={-1}>
+                  Add
+                </button>
+              </div>
+
+              <div className="taskList" role="list" aria-hidden="true">
+                {fullTasks.length === 0 ? (
+                  <div className="taskList__empty">No tasks</div>
+                ) : (
+                  fullTasks.map((t) => (
+                    <div
+                      key={t.id}
+                      className={['task', 'task--dragPreview', t.completed ? 'task--completed' : '', visibleSet.has(t.id) ? '' : 'task--dimmed']
+                        .filter(Boolean)
+                        .join(' ')}
+                    >
+                      <span className="task__dragHandle" aria-hidden="true">
+                        ⋮⋮
+                      </span>
+                      <span className="task__select" aria-hidden="true">
+                        <input type="checkbox" checked={false} readOnly tabIndex={-1} />
+                      </span>
+                      <span className="task__check" aria-hidden="true">
+                        <input className="task__completeBox" type="checkbox" checked={t.completed} readOnly tabIndex={-1} />
+                      </span>
+                      <span className="task__title" aria-hidden="true">
+                        {t.title}
+                      </span>
+                      <span className="iconBtn" aria-hidden="true">
+                        🗑
+                      </span>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <footer className="column__footer">
+                <span className="btn btn--subtle" aria-hidden="true">
+                  Select all
+                </span>
+                <span className="btn btn--danger" aria-hidden="true">
+                  Delete column
+                </span>
+              </footer>
+            </div>,
+            dragPreview.container,
+          )
+        : null}
+    </>
   )
 }
