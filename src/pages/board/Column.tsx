@@ -79,7 +79,7 @@ export function Column({
   }, [fullTasks, searchQuery, statusFilter]);
 
   const { isDragging, previewPortal } = useColumnDraggable({
-    handleEl: handleRef.current,
+    handleRef,
     columnId: column.id,
     columnIndex,
     title: column.title,

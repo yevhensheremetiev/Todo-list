@@ -12,7 +12,7 @@ type DragPreviewState =
   | { type: "preview"; container: HTMLElement; width: number; height: number };
 
 export function useColumnDraggable(params: {
-  handleEl: HTMLButtonElement | null;
+  handleRef: React.RefObject<HTMLButtonElement | null>;
   columnId: string;
   columnIndex: number;
   title: string;
@@ -21,7 +21,7 @@ export function useColumnDraggable(params: {
   shownCount: number;
 }) {
   const {
-    handleEl,
+    handleRef,
     columnId,
     columnIndex,
     title,
@@ -41,7 +41,7 @@ export function useColumnDraggable(params: {
   );
 
   useEffect(() => {
-    const handle = handleEl;
+    const handle = handleRef.current;
     if (!handle) return;
 
     return draggable({
@@ -71,7 +71,7 @@ export function useColumnDraggable(params: {
         });
       },
     });
-  }, [handleEl, columnId, columnIndex]);
+  }, [handleRef, columnId, columnIndex]);
 
   const previewPortal =
     dragPreview.type === "preview"
