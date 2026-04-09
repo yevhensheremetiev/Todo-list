@@ -26,7 +26,6 @@ export function TaskItem({
   onToggleSelect,
 }: Props) {
   const dispatch = useAppDispatch()
-  const rowRef = useRef<HTMLDivElement>(null)
   const handleRef = useRef<HTMLButtonElement>(null)
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState('')
@@ -37,12 +36,10 @@ export function TaskItem({
   )
 
   useEffect(() => {
-    const el = rowRef.current
     const handle = handleRef.current
-    if (!el || !handle) return
+    if (!handle) return
     return draggable({
-      element: el,
-      dragHandle: handle,
+      element: handle,
       getInitialData: () => ({
         dnd: DND_TASK,
         taskId: task.id,
@@ -65,7 +62,6 @@ export function TaskItem({
 
   return (
     <div
-      ref={rowRef}
       className={[
         'task',
         task.completed ? 'task--completed' : '',

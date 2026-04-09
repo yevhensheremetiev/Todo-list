@@ -33,7 +33,6 @@ export function Column({
 }: Props) {
   const dispatch = useAppDispatch()
   const headingId = useId()
-  const headerRef = useRef<HTMLDivElement>(null)
   const handleRef = useRef<HTMLButtonElement>(null)
   const [newTitle, setNewTitle] = useState('')
   const [renaming, setRenaming] = useState(false)
@@ -44,12 +43,10 @@ export function Column({
   const visibleSet = new Set(visibleTasks.map((t) => t.id))
 
   useEffect(() => {
-    const el = headerRef.current
     const handle = handleRef.current
-    if (!el || !handle) return
+    if (!handle) return
     return draggable({
-      element: el,
-      dragHandle: handle,
+      element: handle,
       getInitialData: () => ({
         dnd: DND_COLUMN,
         columnId: column.id,
@@ -75,7 +72,7 @@ export function Column({
 
   return (
     <div className="column" aria-labelledby={headingId}>
-      <header ref={headerRef} className="column__header">
+      <header className="column__header">
         <button
           ref={handleRef}
           type="button"
@@ -155,13 +152,10 @@ export function Column({
 
       <div className="taskList" role="list">
         {fullTasks.length === 0 ? (
-          <>
-            <TaskDropGap columnId={column.id} insertAt={0} />
-            <div className="taskList__empty">No tasks yet.</div>
-          </>
+          <TaskDropGap key="task-list-empty" columnId={column.id} insertAt={0} emptyPlaceholder />
         ) : (
           <>
-            <TaskDropGap columnId={column.id} insertAt={0} />
+            <TaskDropGap key="task-gap-0" columnId={column.id} insertAt={0} />
             {fullTasks.map((task, index) => (
               <Fragment key={task.id}>
                 <div role="listitem">
