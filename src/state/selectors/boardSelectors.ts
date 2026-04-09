@@ -1,7 +1,8 @@
 import { createSelector } from '@reduxjs/toolkit'
+import Fuse from 'fuse.js'
 import type { RootState } from '../store/store.ts'
 import type { ColumnId, StatusFilter, Task } from '../../types/board.ts'
-import { taskMatchesSearch, taskMatchesStatus } from '../../utils/filterTasks.ts'
+import { taskMatchesStatus } from '../../utils/filterTasks.ts'
 
 export const selectBoard = (s: RootState) => s.board
 
@@ -32,7 +33,20 @@ export function filterTasksForDisplay(
   searchQuery: string,
   statusFilter: StatusFilter,
 ): Task[] {
-  return tasks.filter((t) => taskMatchesStatus(t, statusFilter) && taskMatchesSearch(t, searchQuery))
+  const statusFiltered = tasks.filter((t) => taskMatchesStatus(t, statusFilter))
+
+  const q = searchQuery.trim()
+  if (!q) return statusFiltered
+
+  const fuse = new Fuse(statusFiltered, {
+    keys: ['title'],
+    threshold: 0.35,
+    ignoreLocation: true,
+    minMatchCharLength: 2,
+    shouldSort: true,
+  })
+
+  return fuse.search(q).map((r) => r.item)
 }
 
 export function orderedTaskIdsInColumn(columnId: ColumnId, state: RootState['board']): string[] {

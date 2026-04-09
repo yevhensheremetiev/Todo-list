@@ -2,7 +2,8 @@ import { draggable } from '@atlaskit/pragmatic-drag-and-drop/element/adapter'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { ColumnId, Task } from '../../types/board.ts'
-import { highlightMatchParts } from '../../utils/search.ts'
+import type { MatchIndexRange } from '../../utils/search.ts'
+import { highlightMatchParts, highlightPartsFromIndices } from '../../utils/search.ts'
 import { useAppDispatch, useAppSelector } from '../../state/store/hooks.ts'
 import { boardActions } from '../../state/store/boardSlice.ts'
 import { DND_TASK } from '../../types/dnd.ts'
@@ -17,6 +18,7 @@ type Props = {
   columnId: ColumnId
   index: number
   searchQuery: string
+  matchIndices?: readonly MatchIndexRange[]
   selected: boolean
   dimmed: boolean
   onToggleSelect: () => void
@@ -31,6 +33,7 @@ export function TaskItem({
   columnId,
   index,
   searchQuery,
+  matchIndices,
   selected,
   dimmed,
   onToggleSelect,
@@ -67,10 +70,10 @@ export function TaskItem({
     return out
   }, [showMultiPreview, boardColumnOrder, boardColumnsById, selectedSet])
 
-  const parts = useMemo(
-    () => highlightMatchParts(task.title, searchQuery),
-    [task.title, searchQuery],
-  )
+  const parts = useMemo(() => {
+    if (matchIndices && matchIndices.length > 0) return highlightPartsFromIndices(task.title, matchIndices)
+    return highlightMatchParts(task.title, searchQuery)
+  }, [task.title, searchQuery, matchIndices])
 
   useEffect(() => {
     const handle = handleRef.current
@@ -142,16 +145,6 @@ export function TaskItem({
         <input type="checkbox" checked={selected} onChange={onToggleSelect} aria-label="Select task" />
       </label>
 
-      <label className="task__check">
-        <input
-          className="task__completeBox"
-          type="checkbox"
-          checked={task.completed}
-          onChange={() => dispatch(boardActions.taskToggleComplete({ taskId: task.id }))}
-          aria-label={task.completed ? 'Mark incomplete' : 'Mark complete'}
-        />
-      </label>
-
       {editing ? (
         <input
           className="task__editInput"
@@ -214,9 +207,6 @@ export function TaskItem({
                       <span className="task__select" aria-hidden="true">
                         <input type="checkbox" checked readOnly tabIndex={-1} />
                       </span>
-                      <span className="task__check" aria-hidden="true">
-                        <input className="task__completeBox" type="checkbox" checked={t.completed} readOnly tabIndex={-1} />
-                      </span>
                       <span className="task__title" aria-hidden="true">
                         {t.title}
                       </span>
@@ -245,15 +235,6 @@ export function TaskItem({
                   </span>
                   <span className="task__select" aria-hidden="true">
                     <input type="checkbox" checked={selected} readOnly tabIndex={-1} />
-                  </span>
-                  <span className="task__check" aria-hidden="true">
-                    <input
-                      className="task__completeBox"
-                      type="checkbox"
-                      checked={task.completed}
-                      readOnly
-                      tabIndex={-1}
-                    />
                   </span>
                   <span className="task__title" aria-hidden="true">
                     {parts.map((p, idx) =>

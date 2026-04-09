@@ -7,8 +7,8 @@ import { useAppDispatch, useAppSelector } from '../../state/store/hooks.ts'
 import { boardActions } from '../../state/store/boardSlice.ts'
 import type { RootState } from '../../state/store/store.ts'
 import { ColumnDropGap } from '../../dnd/ColumnDropGap.tsx'
-import { BulkToolbar } from './BulkToolbar.tsx'
 import { DndDragContext } from '../../dnd/DndDragContext.tsx'
+import { filterTasksForDisplay } from '../../state/selectors/boardSelectors.ts'
 
 type Props = {
   searchQuery: string
@@ -20,6 +20,17 @@ export function BoardPage({ searchQuery, statusFilter }: Props) {
   const dispatch = useAppDispatch()
   const [dragSource, setDragSource] = useState<Record<string, unknown> | null>(null)
 
+  const isFiltering = searchQuery.trim().length > 0 || statusFilter !== 'all'
+  const visibleColumnIds = isFiltering
+    ? state.columnOrder.filter((columnId) => {
+        const col = state.columnsById[columnId]
+        if (!col) return false
+        const fullTasks = col.taskIds.map((id) => state.tasksById[id]).filter(Boolean)
+        const visibleTasks = filterTasksForDisplay(fullTasks, searchQuery, statusFilter)
+        return visibleTasks.length > 0
+      })
+    : state.columnOrder
+
   useEffect(() => {
     return monitorForElements({
       onDragStart: ({ source }) => setDragSource(source.data),
@@ -30,15 +41,9 @@ export function BoardPage({ searchQuery, statusFilter }: Props) {
   return (
     <DndDragContext.Provider value={{ dragSource }}>
       <section className="board" aria-label="Todo board">
-        <BulkToolbar />
-        <div className="board__toolbar">
-          <button type="button" className="btn btn--subtle" onClick={() => dispatch(boardActions.columnAdd({}))}>
-            + Column
-          </button>
-        </div>
         <div className="board__columns" role="list">
           <ColumnDropGap insertAt={0} />
-          {state.columnOrder.map((columnId, columnIndex) => (
+          {visibleColumnIds.map((columnId, columnIndex) => (
             <Fragment key={columnId}>
               <div role="listitem" className="board__columnWrap">
                 <Column

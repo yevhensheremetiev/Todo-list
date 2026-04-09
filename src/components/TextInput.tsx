@@ -1,17 +1,19 @@
-type Props = {
+import type { InputHTMLAttributes } from 'react'
+
+type Props = Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'className'> & {
   value: string
   onChange: (value: string) => void
-  placeholder?: string
   ariaLabel: string
+  className?: string
 }
 
-export function TextInput({ value, onChange, placeholder, ariaLabel }: Props) {
+export function TextInput({ value, onChange, ariaLabel, className, ...rest }: Props) {
   return (
     <input
-      className="textInput"
+      {...rest}
+      className={['textInput', className].filter(Boolean).join(' ')}
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      placeholder={placeholder}
       aria-label={ariaLabel}
     />
   )

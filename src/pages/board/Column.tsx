@@ -1,5 +1,5 @@
 import { draggable } from '@atlaskit/pragmatic-drag-and-drop/element/adapter'
-import { Fragment, useEffect, useId, useMemo, useRef, useState } from 'react'
+import { Fragment, useEffect, useId, useRef, useState } from 'react'
 import type { ColumnId, StatusFilter, Task } from '../../types/board.ts'
 import { TaskItem } from './TaskItem.tsx'
 import { TaskDropGap } from '../../dnd/TaskDropGap.tsx'
@@ -10,6 +10,9 @@ import { DND_COLUMN } from '../../types/dnd.ts'
 import { pointerOutsideOfPreview } from '@atlaskit/pragmatic-drag-and-drop/element/pointer-outside-of-preview'
 import { setCustomNativeDragPreview } from '@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview'
 import { createPortal } from 'react-dom'
+import { ConfirmModal } from '../../components/ConfirmModal.tsx'
+import Fuse from 'fuse.js'
+import type { MatchIndexRange } from '../../utils/search.ts'
 
 type Props = {
   column: { id: ColumnId; title: string; taskIds: string[] }
@@ -46,10 +49,30 @@ export function Column({
   const [newTitle, setNewTitle] = useState('')
   const [renaming, setRenaming] = useState(false)
   const [draftTitle, setDraftTitle] = useState('')
+  const canAddTask = newTitle.trim().length > 0
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
 
   const fullTasks = column.taskIds.map((id) => tasksById[id]).filter(Boolean)
   const visibleTasks = filterTasksForDisplay(fullTasks, searchQuery, statusFilter)
-  const visibleSet = useMemo(() => new Set(visibleTasks.map((t) => t.id)), [visibleTasks])
+  const visibleSet = new Set(visibleTasks.map((t) => t.id))
+  const q = searchQuery.trim()
+  const matchIndicesByTaskId = new Map<string, readonly MatchIndexRange[]>()
+  if (q) {
+    const fuse = new Fuse(visibleTasks, {
+      keys: ['title'],
+      threshold: 0.35,
+      ignoreLocation: true,
+      minMatchCharLength: 2,
+      includeMatches: true,
+      shouldSort: false,
+    })
+    const results = fuse.search(q)
+    for (const r of results) {
+      const titleMatch = r.matches?.find((m) => m.key === 'title')
+      const indices = (titleMatch?.indices ?? []) as unknown as MatchIndexRange[]
+      matchIndicesByTaskId.set(r.item.id, indices)
+    }
+  }
 
   useEffect(() => {
     const handle = handleRef.current
@@ -83,11 +106,20 @@ export function Column({
     })
   }, [column.id, columnIndex])
 
-  const selectedInColumn = selection.filter((id) => column.taskIds.includes(id))
-  const allSelected = fullTasks.length > 0 && selectedInColumn.length === fullTasks.length
+  const selectedInColumn = selection.filter((id) => visibleSet.has(id))
+  const allSelected = visibleTasks.length > 0 && selectedInColumn.length === visibleTasks.length
+
+  const commitRename = () => {
+    const t = draftTitle.trim()
+    if (t && t !== column.title) dispatch(boardActions.columnRename({ columnId: column.id, title: t }))
+    else setDraftTitle(column.title)
+  }
 
   const deleteColumn = () => {
-    if (!window.confirm('Delete this column and all its tasks?')) return
+    setConfirmDeleteOpen(true)
+  }
+
+  const confirmDelete = () => {
     dispatch(boardActions.columnDelete({ columnId: column.id }))
   }
 
@@ -118,13 +150,15 @@ export function Column({
               value={draftTitle}
               onChange={(e) => setDraftTitle(e.target.value)}
               onBlur={() => {
-                const t = draftTitle.trim()
-                if (t && t !== column.title) dispatch(boardActions.columnRename({ columnId: column.id, title: t }))
-                else setDraftTitle(column.title)
+                commitRename()
                 setRenaming(false)
               }}
               onKeyDown={(e) => {
-                if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  commitRename()
+                  setRenaming(false)
+                }
                 if (e.key === 'Escape') {
                   setDraftTitle(column.title)
                   setRenaming(false)
@@ -154,7 +188,15 @@ export function Column({
         <button
           className="btn btn--subtle"
           type="button"
+          onMouseDown={(e) => {
+            if (renaming) e.preventDefault()
+          }}
           onClick={() => {
+            if (renaming) {
+              commitRename()
+              setRenaming(false)
+              return
+            }
             setDraftTitle(column.title)
             setRenaming(true)
           }}
@@ -174,18 +216,18 @@ export function Column({
           placeholder="New task…"
           aria-label="New task title"
         />
-        <button className="btn btn--subtle" type="button" onClick={addTask}>
+        <button className="btn btn--subtle" type="button" onClick={addTask} disabled={!canAddTask} aria-disabled={!canAddTask}>
           Add
         </button>
       </div>
 
       <div className="taskList" role="list">
-        {fullTasks.length === 0 ? (
+        {visibleTasks.length === 0 ? (
           <TaskDropGap key="task-list-empty" columnId={column.id} insertAt={0} emptyPlaceholder />
         ) : (
           <>
             <TaskDropGap key="task-gap-0" columnId={column.id} insertAt={0} />
-            {fullTasks.map((task, index) => (
+            {visibleTasks.map((task, index) => (
               <Fragment key={task.id}>
                 <div role="listitem">
                   <TaskItem
@@ -193,8 +235,9 @@ export function Column({
                     columnId={column.id}
                     index={index}
                     searchQuery={searchQuery}
+                    matchIndices={matchIndicesByTaskId.get(task.id)}
                     selected={selection.includes(task.id)}
-                    dimmed={!visibleSet.has(task.id)}
+                    dimmed={false}
                     onToggleSelect={() => onToggleSelect(task.id)}
                   />
                 </div>
@@ -211,7 +254,7 @@ export function Column({
             Deselect all
           </button>
         ) : (
-          <button className="btn btn--subtle" type="button" onClick={onSelectAll} disabled={fullTasks.length === 0}>
+          <button className="btn btn--subtle" type="button" onClick={onSelectAll} disabled={visibleTasks.length === 0}>
             Select all
           </button>
         )}
@@ -220,6 +263,20 @@ export function Column({
         </button>
       </footer>
       </div>
+
+      <ConfirmModal
+        open={confirmDeleteOpen}
+        title="Delete column?"
+        description="This will delete the column and all its tasks. This action can’t be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        danger
+        onCancel={() => setConfirmDeleteOpen(false)}
+        onConfirm={() => {
+          setConfirmDeleteOpen(false)
+          confirmDelete()
+        }}
+      />
 
       {dragPreview.type === 'preview'
         ? createPortal(

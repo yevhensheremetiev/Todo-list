@@ -8,9 +8,10 @@ export function BulkToolbar() {
   const board = useAppSelector((s: RootState) => s.board)
   const selectRef = useRef<HTMLSelectElement>(null)
   const count = board.selection.taskIds.length
-  if (count === 0) return null
+  const disabled = count === 0
 
   const moveTo = (columnId: string) => {
+    if (disabled) return
     if (!columnId) return
     dispatch(boardActions.bulkMoveSelected({ toColumnId: columnId, toIndex: 0 }))
     if (selectRef.current) selectRef.current.value = ''
@@ -23,6 +24,7 @@ export function BulkToolbar() {
         type="button"
         className="btn btn--subtle"
         onClick={() => dispatch(boardActions.taskSetComplete({ taskIds: board.selection.taskIds, completed: true }))}
+        disabled={disabled}
       >
         Complete
       </button>
@@ -30,6 +32,7 @@ export function BulkToolbar() {
         type="button"
         className="btn btn--subtle"
         onClick={() => dispatch(boardActions.taskSetComplete({ taskIds: board.selection.taskIds, completed: false }))}
+        disabled={disabled}
       >
         Incomplete
       </button>
@@ -41,6 +44,7 @@ export function BulkToolbar() {
           defaultValue=""
           aria-label="Move selected tasks to column"
           onChange={(e) => moveTo(e.target.value)}
+          disabled={disabled}
         >
           <option value="" disabled>
             Move to…
@@ -56,12 +60,18 @@ export function BulkToolbar() {
         type="button"
         className="btn btn--danger"
         onClick={() => {
-          if (window.confirm(`Delete ${count} task(s)?`)) dispatch(boardActions.bulkDeleteSelected())
+          dispatch(boardActions.bulkDeleteSelected())
         }}
+        disabled={disabled}
       >
         Delete
       </button>
-      <button type="button" className="btn btn--subtle" onClick={() => dispatch(boardActions.selectionClear())}>
+      <button
+        type="button"
+        className="btn btn--subtle"
+        onClick={() => dispatch(boardActions.selectionClear())}
+        disabled={disabled}
+      >
         Clear
       </button>
     </div>
