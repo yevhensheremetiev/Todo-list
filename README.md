@@ -1,6 +1,19 @@
-# Todo board (React + TypeScript)
+# Todo board
 
 Kanban-style todo board: multiple columns, tasks with completion and inline edit, multi-select with bulk actions, search and status filter, drag-and-drop for tasks and columns, and persisted state in the browser.
+
+## Demo
+
+- **Remote**: https://todo-list-nine-navy-49.vercel.app/
+
+## Tech stack (libs)
+
+- **React 19** + **TypeScript** — UI
+- **Vite** — dev server / build
+- **@reduxjs/toolkit** + **react-redux** — state management
+- **redux-persist** — persistence (localStorage)
+- **@atlaskit/pragmatic-drag-and-drop** — drag & drop (tasks + columns)
+- **fuse.js** — smart search (fuzzy)
 
 ## Features
 
