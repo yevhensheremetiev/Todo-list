@@ -7,6 +7,7 @@ import { BulkToolbar } from "./pages/board/BulkToolbar.tsx";
 import { useAppDispatch } from "./state/store/hooks.ts";
 import { boardActions } from "./state/store/boardSlice.ts";
 import { useMediaQuery } from "./hooks/useMediaQuery.ts";
+import { cn } from "./utils/cn.ts";
 import "./styles/app.css";
 
 export function App() {
@@ -29,9 +30,7 @@ export function App() {
   return (
     <div className="appShell">
       <header
-        className={["topBar", isHeaderCollapsed ? "topBar--collapsed" : ""]
-          .filter(Boolean)
-          .join(" ")}
+        className={cn("topBar", { "topBar--collapsed": isHeaderCollapsed })}
       >
         <div className="topBar__row">
           <div className="topBar__left">
@@ -100,14 +99,10 @@ export function App() {
       ) : null}
 
       <main
-        className={[
+        className={cn(
           "content",
-          isHeaderToggleEnabled && isHeaderCollapsed
-            ? "content--withMicroHeader"
-            : "",
-        ]
-          .filter(Boolean)
-          .join(" ")}
+          { "content--withMicroHeader": isHeaderToggleEnabled && isHeaderCollapsed },
+        )}
       >
         <BoardPage searchQuery={searchQuery} statusFilter={statusFilter} />
       </main>

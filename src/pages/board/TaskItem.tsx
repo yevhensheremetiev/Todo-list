@@ -1,5 +1,5 @@
 import { draggable } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { ColumnId, Task } from "../../types/board.ts";
 import type { MatchIndexRange } from "../../utils/search.ts";
@@ -7,15 +7,12 @@ import {
   highlightMatchParts,
   highlightPartsFromIndices,
 } from "../../utils/search.ts";
-import { useAppDispatch, useAppSelector } from "../../state/store/hooks.ts";
+import { cn } from "../../utils/cn.ts";
+import { useAppDispatch } from "../../state/store/hooks.ts";
 import { boardActions } from "../../state/store/boardSlice.ts";
 import { DND_TASK } from "../../types/dnd.ts";
 import { pointerOutsideOfPreview } from "@atlaskit/pragmatic-drag-and-drop/element/pointer-outside-of-preview";
 import { setCustomNativeDragPreview } from "@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview";
-import type { RootState } from "../../state/store/store.ts";
-import { DndDragContext } from "../../dnd/DndDragContext.tsx";
-import { useContext } from "react";
-import { selectOrderedSelectionTaskIds } from "../../state/selectors/boardSelectors.ts";
 
 type Props = {
   task: Task;
@@ -25,14 +22,18 @@ type Props = {
   matchIndices?: readonly MatchIndexRange[];
   selected: boolean;
   dimmed: boolean;
-  onToggleSelect: () => void;
+  selectedCount: number;
+  groupDragActive: boolean;
+  orderedSelectionTaskIds?: readonly string[];
+  tasksByIdForPreview?: Record<string, Task>;
+  onToggleSelect: (taskId: string) => void;
 };
 
 type DragPreviewState =
   | { type: "idle" }
   | { type: "preview"; container: HTMLElement; width: number };
 
-export function TaskItem({
+function TaskItemComponent({
   task,
   columnId,
   index,
@@ -40,19 +41,13 @@ export function TaskItem({
   matchIndices,
   selected,
   dimmed,
+  selectedCount,
+  groupDragActive,
+  orderedSelectionTaskIds,
+  tasksByIdForPreview,
   onToggleSelect,
 }: Props) {
   const dispatch = useAppDispatch();
-  const selectedIds = useAppSelector(
-    (s: RootState) => s.board.selection.taskIds,
-  );
-  const selectedCount = selectedIds.length;
-  const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
-  const boardTasksById = useAppSelector((s: RootState) => s.board.tasksById);
-  const orderedSelectionTaskIds = useAppSelector((s: RootState) =>
-    selectOrderedSelectionTaskIds(s),
-  );
-  const { dragSource } = useContext(DndDragContext);
   const handleRef = useRef<HTMLButtonElement>(null);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
@@ -60,16 +55,14 @@ export function TaskItem({
   const [dragPreview, setDragPreview] = useState<DragPreviewState>({
     type: "idle",
   });
-  const showMultiPreview = selected && selectedCount > 1;
-  const isDraggingSelectedGroup =
-    (dragSource as { dnd?: string; taskId?: string } | null)?.dnd ===
-      DND_TASK &&
+  const showMultiPreview =
+    selected &&
     selectedCount > 1 &&
-    !!(dragSource as { taskId?: string } | null)?.taskId &&
-    selectedSet.has((dragSource as { taskId: string }).taskId);
+    !!orderedSelectionTaskIds &&
+    !!tasksByIdForPreview;
   const orderedSelectedTaskIds = useMemo(() => {
     if (!showMultiPreview) return [];
-    return orderedSelectionTaskIds;
+    return orderedSelectionTaskIds ?? [];
   }, [showMultiPreview, orderedSelectionTaskIds]);
 
   const parts = useMemo(() => {
@@ -125,17 +118,12 @@ export function TaskItem({
   return (
     <>
       <div
-        className={[
-          "task",
-          task.completed ? "task--completed" : "",
-          dimmed ? "task--dimmed" : "",
-          selected ? "task--selected" : "",
-          isDragging || (isDraggingSelectedGroup && selected)
-            ? "task--dragging"
-            : "",
-        ]
-          .filter(Boolean)
-          .join(" ")}
+        className={cn("task", {
+          "task--completed": task.completed,
+          "task--dimmed": dimmed,
+          "task--selected": selected,
+          "task--dragging": isDragging || (groupDragActive && selected),
+        })}
       >
         <button
           ref={handleRef}
@@ -151,7 +139,7 @@ export function TaskItem({
           <input
             type="checkbox"
             checked={selected}
-            onChange={onToggleSelect}
+            onChange={() => onToggleSelect(task.id)}
             aria-label="Select task"
           />
         </label>
@@ -211,18 +199,16 @@ export function TaskItem({
                 style={{ width: dragPreview.width }}
               >
                 {orderedSelectedTaskIds.map((id) => {
-                  const t = boardTasksById[id];
+                  const t = tasksByIdForPreview?.[id];
                   if (!t) return null;
                   return (
                     <div
                       key={id}
-                      className={[
+                      className={cn(
                         "task",
                         "task--dragPreview",
                         t.completed ? "task--completed" : "",
-                      ]
-                        .filter(Boolean)
-                        .join(" ")}
+                      )}
                       style={{ width: dragPreview.width }}
                     >
                       <span className="task__dragHandle" aria-hidden="true">
@@ -244,14 +230,12 @@ export function TaskItem({
             ) : (
               <div className="taskPreviewStack">
                 <div
-                  className={[
+                  className={cn(
                     "task",
                     "task--dragPreview",
                     task.completed ? "task--completed" : "",
                     selected ? "task--selected" : "",
-                  ]
-                    .filter(Boolean)
-                    .join(" ")}
+                  )}
                   style={{ width: dragPreview.width }}
                 >
                   <span className="task__dragHandle" aria-hidden="true">
@@ -286,3 +270,5 @@ export function TaskItem({
     </>
   );
 }
+
+export const TaskItem = memo(TaskItemComponent);

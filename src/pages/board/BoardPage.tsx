@@ -1,5 +1,5 @@
 import { monitorForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { Column } from "./Column.tsx";
 import type { StatusFilter } from "../../types/board.ts";
 import "../../styles/board.css";
@@ -8,7 +8,11 @@ import { boardActions } from "../../state/store/boardSlice.ts";
 import type { RootState } from "../../state/store/store.ts";
 import { ColumnDropGap } from "../../dnd/ColumnDropGap.tsx";
 import { DndDragContext } from "../../dnd/DndDragContext.tsx";
-import { filterTasksForDisplay } from "../../state/selectors/boardSelectors.ts";
+import {
+  filterTasksForDisplay,
+  selectOrderedSelectionTaskIds,
+} from "../../state/selectors/boardSelectors.ts";
+import { canonicalInsertAt } from "../../utils/canonicalInsertAt.ts";
 
 type Props = {
   searchQuery: string;
@@ -16,19 +20,33 @@ type Props = {
 };
 
 export function BoardPage({ searchQuery, statusFilter }: Props) {
-  const state = useAppSelector((s: RootState) => s.board);
+  const columnOrder = useAppSelector((s: RootState) => s.board.columnOrder);
+  const columnsById = useAppSelector((s: RootState) => s.board.columnsById);
+  const tasksById = useAppSelector((s: RootState) => s.board.tasksById);
+  const selectionTaskIds = useAppSelector(
+    (s: RootState) => s.board.selection.taskIds,
+  );
+  const orderedSelectionTaskIds = useAppSelector((s: RootState) =>
+    selectOrderedSelectionTaskIds(s),
+  );
   const dispatch = useAppDispatch();
   const [dragSource, setDragSource] = useState<Record<string, unknown> | null>(
     null,
   );
 
+  const columnIndexById = useMemo(() => {
+    const m = new Map<string, number>();
+    for (let i = 0; i < columnOrder.length; i++) m.set(columnOrder[i], i);
+    return m;
+  }, [columnOrder]);
+
   const isFiltering = searchQuery.trim().length > 0 || statusFilter !== "all";
   const visibleColumnIds = isFiltering
-    ? state.columnOrder.filter((columnId) => {
-        const col = state.columnsById[columnId];
+    ? columnOrder.filter((columnId) => {
+        const col = columnsById[columnId];
         if (!col) return false;
         const fullTasks = col.taskIds
-          .map((id) => state.tasksById[id])
+          .map((id) => tasksById[id])
           .filter(Boolean);
         const visibleTasks = filterTasksForDisplay(
           fullTasks,
@@ -37,7 +55,7 @@ export function BoardPage({ searchQuery, statusFilter }: Props) {
         );
         return visibleTasks.length > 0;
       })
-    : state.columnOrder;
+    : columnOrder;
 
   useEffect(() => {
     return monitorForElements({
@@ -46,18 +64,30 @@ export function BoardPage({ searchQuery, statusFilter }: Props) {
     });
   }, []);
 
-  const visibleColumnCanonicalInsertAt = (gapIndexInVisibleList: number) => {
-    const ids = visibleColumnIds;
-    if (ids.length === 0) return 0;
-    const clamped = Math.max(0, Math.min(gapIndexInVisibleList, ids.length));
+  const visibleColumnCanonicalInsertAt = (gapIndexInVisibleList: number) =>
+    canonicalInsertAt({
+      fullIds: columnOrder,
+      visibleIds: visibleColumnIds,
+      gapIndexInVisibleList,
+      fullIndexById: columnIndexById,
+    });
 
-    if (clamped === 0) return state.columnOrder.indexOf(ids[0]);
-    if (clamped === ids.length)
-      return state.columnOrder.indexOf(ids[ids.length - 1]) + 1;
+  const onToggleSelect = useCallback(
+    (taskId: string) => dispatch(boardActions.selectionToggle({ taskId })),
+    [dispatch],
+  );
 
-    const nextId = ids[clamped];
-    return state.columnOrder.indexOf(nextId);
-  };
+  const onSelectAllInColumn = useCallback(
+    (columnId: string) =>
+      dispatch(boardActions.selectionSelectAllInColumn({ columnId })),
+    [dispatch],
+  );
+
+  const onDeselectAllInColumn = useCallback(
+    (columnId: string) =>
+      dispatch(boardActions.selectionDeselectAllInColumn({ columnId })),
+    [dispatch],
+  );
 
   return (
     <DndDragContext.Provider value={{ dragSource }}>
@@ -68,25 +98,16 @@ export function BoardPage({ searchQuery, statusFilter }: Props) {
             <Fragment key={columnId}>
               <div role="listitem" className="board__columnWrap">
                 <Column
-                  column={state.columnsById[columnId]}
-                  tasksById={state.tasksById}
-                  columnIndex={state.columnOrder.indexOf(columnId)}
+                  column={columnsById[columnId]}
+                  tasksById={tasksById}
+                  columnIndex={columnIndexById.get(columnId) ?? 0}
                   searchQuery={searchQuery}
                   statusFilter={statusFilter}
-                  selection={state.selection.taskIds}
-                  onToggleSelect={(taskId) =>
-                    dispatch(boardActions.selectionToggle({ taskId }))
-                  }
-                  onSelectAll={() =>
-                    dispatch(
-                      boardActions.selectionSelectAllInColumn({ columnId }),
-                    )
-                  }
-                  onDeselectAll={() =>
-                    dispatch(
-                      boardActions.selectionDeselectAllInColumn({ columnId }),
-                    )
-                  }
+                  selection={selectionTaskIds}
+                  orderedSelectionTaskIds={orderedSelectionTaskIds}
+                  onToggleSelect={onToggleSelect}
+                  onSelectAll={() => onSelectAllInColumn(columnId)}
+                  onDeselectAll={() => onDeselectAllInColumn(columnId)}
                 />
               </div>
               <ColumnDropGap

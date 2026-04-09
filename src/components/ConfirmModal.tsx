@@ -2,6 +2,7 @@ import { useId, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useAutofocusOnOpen } from '../hooks/useAutofocusOnOpen.ts'
 import { useEscapeKey } from '../hooks/useEscapeKey.ts'
+import { cn } from '../utils/cn.ts'
 
 type Props = {
   open: boolean
@@ -65,7 +66,7 @@ export function ConfirmModal({
           </button>
           <button
             type="button"
-            className={['btn', danger ? 'btn--danger' : ''].filter(Boolean).join(' ')}
+            className={cn('btn', danger ? 'btn--danger' : '')}
             onClick={onConfirm}
           >
             {confirmText}

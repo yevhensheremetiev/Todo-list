@@ -26,13 +26,17 @@
 }
 
 .bulkBar__select {
-  padding: 8px 10px;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--text);
-  font-size: 13px;
-  min-width: 140px;
+  min-width: 112px;
+  height: 33px;
+  padding: 0 28px 0 10px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 13px !important;
+  font-weight: 500;
+  line-height: 31px;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
 }
 
 .visuallyHidden {
@@ -142,13 +146,9 @@
 
 .column__titleInput {
   width: 100%;
-  box-sizing: border-box;
   padding: 6px 8px;
   border-radius: 8px;
-  border: 1px solid var(--border);
   background: rgba(255, 255, 255, 0.06);
-  color: var(--text);
-  font: inherit;
 }
 
 .column__addRow {
@@ -164,12 +164,21 @@
   min-width: 0;
   padding: 8px 10px;
   border-radius: 10px;
-  border: 1px solid var(--border);
   background: rgba(255, 255, 255, 0.05);
-  color: var(--text);
   font-size: 14px;
 }
 
+.bulkBar__select,
+.column__titleInput,
+.column__newTaskInput,
+.task__editInput {
+  box-sizing: border-box;
+  border: 1px solid var(--border);
+  color: var(--text);
+  font: inherit;
+}
+
+.bulkBar__select:focus-visible,
 .column__titleInput:focus-visible,
 .column__newTaskInput:focus-visible,
 .task__editInput:focus-visible {
@@ -301,8 +310,7 @@
 }
 
 .task--selected {
-  outline: 1px solid rgba(139, 92, 246, 0.9);
-  outline-offset: 0;
+  box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.9);
 }
 
 .task--dragging {

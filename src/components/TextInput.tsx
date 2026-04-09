@@ -1,4 +1,5 @@
 import type { InputHTMLAttributes } from 'react'
+import { cn } from '../utils/cn.ts'
 
 type Props = Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'className'> & {
   value: string
@@ -11,7 +12,7 @@ export function TextInput({ value, onChange, ariaLabel, className, ...rest }: Pr
   return (
     <input
       {...rest}
-      className={['textInput', className].filter(Boolean).join(' ')}
+      className={cn('field', 'textInput', className)}
       value={value}
       onChange={(e) => onChange(e.target.value)}
       aria-label={ariaLabel}

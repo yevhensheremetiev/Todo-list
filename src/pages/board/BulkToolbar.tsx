@@ -20,22 +20,6 @@ export function BulkToolbar() {
   return (
     <div className="bulkBar" role="region" aria-label="Bulk actions">
       <span className="bulkBar__count">{count} selected</span>
-      <button
-        type="button"
-        className="btn btn--subtle"
-        onClick={() => dispatch(boardActions.taskSetComplete({ taskIds: board.selection.taskIds, completed: true }))}
-        disabled={disabled}
-      >
-        Complete
-      </button>
-      <button
-        type="button"
-        className="btn btn--subtle"
-        onClick={() => dispatch(boardActions.taskSetComplete({ taskIds: board.selection.taskIds, completed: false }))}
-        disabled={disabled}
-      >
-        Incomplete
-      </button>
       <label className="bulkBar__move">
         <span className="visuallyHidden">Move to column</span>
         <select
@@ -56,6 +40,22 @@ export function BulkToolbar() {
           ))}
         </select>
       </label>
+      <button
+        type="button"
+        className="btn btn--subtle"
+        onClick={() => dispatch(boardActions.taskSetComplete({ taskIds: board.selection.taskIds, completed: true }))}
+        disabled={disabled}
+      >
+        Complete
+      </button>
+      <button
+        type="button"
+        className="btn btn--subtle"
+        onClick={() => dispatch(boardActions.taskSetComplete({ taskIds: board.selection.taskIds, completed: false }))}
+        disabled={disabled}
+      >
+        Incomplete
+      </button>
       <button
         type="button"
         className="btn btn--danger"
