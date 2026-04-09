@@ -12,6 +12,7 @@ import { setCustomNativeDragPreview } from '@atlaskit/pragmatic-drag-and-drop/el
 import type { RootState } from '../../state/store/store.ts'
 import { DndDragContext } from '../../dnd/DndDragContext.tsx'
 import { useContext } from 'react'
+import { selectOrderedSelectionTaskIds } from '../../state/selectors/boardSelectors.ts'
 
 type Props = {
   task: Task
@@ -43,8 +44,7 @@ export function TaskItem({
   const selectedCount = selectedIds.length
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds])
   const boardTasksById = useAppSelector((s: RootState) => s.board.tasksById)
-  const boardColumnOrder = useAppSelector((s: RootState) => s.board.columnOrder)
-  const boardColumnsById = useAppSelector((s: RootState) => s.board.columnsById)
+  const orderedSelectionTaskIds = useAppSelector((s: RootState) => selectOrderedSelectionTaskIds(s))
   const { dragSource } = useContext(DndDragContext)
   const handleRef = useRef<HTMLButtonElement>(null)
   const [editing, setEditing] = useState(false)
@@ -59,16 +59,8 @@ export function TaskItem({
     selectedSet.has((dragSource as { taskId: string }).taskId)
   const orderedSelectedTaskIds = useMemo(() => {
     if (!showMultiPreview) return []
-    const out: string[] = []
-    for (const colId of boardColumnOrder) {
-      const col = boardColumnsById[colId]
-      if (!col) continue
-      for (const id of col.taskIds) {
-        if (selectedSet.has(id)) out.push(id)
-      }
-    }
-    return out
-  }, [showMultiPreview, boardColumnOrder, boardColumnsById, selectedSet])
+    return orderedSelectionTaskIds
+  }, [showMultiPreview, orderedSelectionTaskIds])
 
   const parts = useMemo(() => {
     if (matchIndices && matchIndices.length > 0) return highlightPartsFromIndices(task.title, matchIndices)

@@ -6,14 +6,15 @@ import { TextInput } from "./components/TextInput.tsx";
 import { BulkToolbar } from "./pages/board/BulkToolbar.tsx";
 import { useAppDispatch } from "./state/store/hooks.ts";
 import { boardActions } from "./state/store/boardSlice.ts";
+import { useMediaQuery } from "./hooks/useMediaQuery.ts";
 import "./styles/app.css";
 
 export function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
-  const [isHeaderToggleEnabled, setIsHeaderToggleEnabled] = useState(false);
   const dispatch = useAppDispatch();
+  const isHeaderToggleEnabled = useMediaQuery("(max-height: 650px)");
 
   const filterOptions = [
     { value: "all" as const, label: "All" },
@@ -22,18 +23,8 @@ export function App() {
   ];
 
   useEffect(() => {
-    const mq = window.matchMedia("(max-height: 650px)");
-
-    const sync = () => {
-      const enabled = mq.matches;
-      setIsHeaderToggleEnabled(enabled);
-      if (!enabled) setIsHeaderCollapsed(false);
-    };
-
-    sync();
-    mq.addEventListener("change", sync);
-    return () => mq.removeEventListener("change", sync);
-  }, []);
+    if (!isHeaderToggleEnabled) setIsHeaderCollapsed(false);
+  }, [isHeaderToggleEnabled]);
 
   return (
     <div className="appShell">

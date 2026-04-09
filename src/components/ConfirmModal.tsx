@@ -1,5 +1,7 @@
-import { useEffect, useId, useRef } from 'react'
+import { useId, useRef } from 'react'
 import { createPortal } from 'react-dom'
+import { useAutofocusOnOpen } from '../hooks/useAutofocusOnOpen.ts'
+import { useEscapeKey } from '../hooks/useEscapeKey.ts'
 
 type Props = {
   open: boolean
@@ -26,19 +28,8 @@ export function ConfirmModal({
   const descId = useId()
   const cancelRef = useRef<HTMLButtonElement>(null)
 
-  useEffect(() => {
-    if (!open) return
-    cancelRef.current?.focus()
-  }, [open])
-
-  useEffect(() => {
-    if (!open) return
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onCancel()
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [open, onCancel])
+  useAutofocusOnOpen(cancelRef, open)
+  useEscapeKey(onCancel, open)
 
   if (!open) return null
 
